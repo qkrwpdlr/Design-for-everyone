@@ -7,6 +7,8 @@
     <p @click="reloadCheck">reloadCheck</p>
     <p @click="facebookBox">facebookBox</p>
     <p @click="test">test</p>
+    <p @click="saveAsJson">save as json</p>
+    <p @click="loadFromJSON">loadFromJSON</p>
     <canvas id="c"></canvas>
   </div>
 </template>
@@ -36,6 +38,14 @@ export default {
     };
   },
   methods: {
+    saveAsJson: function() {
+      let result = this.canvas.toJSON();
+      result = JSON.stringify(result);
+      localStorage.setItem("tempSave", result);
+    },
+    loadFromJSON: function() {
+      this.canvas.loadFromJSON(localStorage.getItem("tempSave"));
+    },
     facebookBox: function() {
       this.canvas.add(
         new fabric.Rect({
@@ -80,9 +90,12 @@ export default {
       });
     },
     test: function() {
-      let result = this.canvas.toJSON();
-      result = JSON.stringify(result);
-      localStorage.setItem("tempSave", result);
+      let tempObj = this.canvas._objects;
+      for (let i in tempObj) {
+        if (tempObj[i].type == "image") {
+          console.log(tempObj[i].src);
+        }
+      }
     },
     loadSvg: function() {
       fabric.loadSVGFromURL(this.tempSvg, (temp, options, svgTag) => {
@@ -110,20 +123,6 @@ export default {
             }
           }
         }
-        // for (let i in temp) {
-        //   if (temp[i].type == "text") {
-        //     for (let j in svgTag[i].childNodes) {
-        //       if (svgTag[i].childNodes[j].innerHTML != undefined)
-        //         temp_str = temp_str + svgTag[i].childNodes[j].innerHTML + "\n";
-        //     }
-        //     temp[i].set({ text: temp_str });
-        //     temp_str = "";
-        //     this.canvas.add(temp[i]);
-        //   } else {
-        //     this.canvas.add(temp[i]);
-        //   }
-        // }
-
         this.originSize.width = options.width;
         this.originSize.height = options.height;
         let dic = {};
@@ -160,13 +159,12 @@ export default {
           groupCount = group.length;
         }
         this.canvas.renderAll();
-        const rate = 0.2;
+        const rate = 0.3;
         let temp_str = "";
         this.canvas.setHeight(options.height * rate);
         this.canvas.setWidth(options.width * rate);
         this.canvas.setZoom(rate);
         this.canvas.renderAll();
-        console.log(this.canvas._objects);
       });
     }
   },
