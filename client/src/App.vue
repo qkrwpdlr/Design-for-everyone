@@ -1,22 +1,36 @@
 <template>
   <div id="app">
-    <router-view/>
+      <upload-component v-if="this.isUploading === true" />
+      <router-view/>
   </div>
 </template>
 
 <script>
+import { mapState } from "vuex";
+import uploadComponent from "./components/uploadComponent";
 export default {
-  name: 'App'
-}
+  name: "App",
+  components: {
+    uploadComponent
+  },
+  computed: {
+    ...mapState({ isUploading: "isUploading" })
+  }
+};
 </script>
 
 <style>
+html,
+body {
+  height: 100%;
+}
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  position: absolute;
+  width: 100%;
+  height: 100%;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin: 0;
+  padding: 0;
 }
 </style>

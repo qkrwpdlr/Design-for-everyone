@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div @dragenter="dragEnter" id="mainDom" @drop="drop">
     <p @click="loadSvg">loadSvg</p>
     <p @click="loadJson">jsonLoad</p>
     <p @click="checkMod">checkMod</p>
@@ -16,9 +16,10 @@
 <script>
 import { fabric } from "fabric";
 import jsonData from "./../assets/test.json";
-
+import { mapActions, mapMutations } from "vuex";
 export default {
   mounted() {
+    this.s3Init();
     this.canvas = new fabric.Canvas("c", { preserveObjectStacking: true });
   },
   data: function() {
@@ -38,6 +39,18 @@ export default {
     };
   },
   methods: {
+    ...mapMutations({
+      setUploading: "setUploading"
+    }),
+    ...mapActions({
+      s3Init: "s3Init"
+    }),
+    drop: function(e) {
+      e.preventDefault();
+    },
+    dragEnter: function(e) {
+      this.setUploading(true);
+    },
     saveAsJson: function() {
       let result = this.canvas.toJSON();
       result = JSON.stringify(result);
@@ -224,4 +237,10 @@ function CssToJson(cssData, fabricObj, positionX) {
 </script>
 
 <style>
+#mainDom {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  background-color: red;
+}
 </style>
