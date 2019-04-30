@@ -1,5 +1,5 @@
 <template>
-  <div @dragenter="dragEnter" id="mainDom" @drop="drop">
+  <div id="mainDom">
     <p @click="loadSvg">loadSvg</p>
     <p @click="loadJson">jsonLoad</p>
     <p @click="checkMod">checkMod</p>
@@ -17,8 +17,13 @@
 import { fabric } from "fabric";
 import jsonData from "./../assets/test.json";
 import { mapActions, mapMutations } from "vuex";
+import { customUpload, eventBusMixin } from "@/factories/dragAndDrop";
+import Vue from "vue";
+
 export default {
+  mixins: [eventBusMixin],
   mounted() {
+    customUpload();
     this.s3Init();
     this.canvas = new fabric.Canvas("c", { preserveObjectStacking: true });
   },
@@ -45,12 +50,6 @@ export default {
     ...mapActions({
       s3Init: "s3Init"
     }),
-    drop: function(e) {
-      e.preventDefault();
-    },
-    dragEnter: function(e) {
-      this.setUploading(true);
-    },
     saveAsJson: function() {
       let result = this.canvas.toJSON();
       result = JSON.stringify(result);
@@ -110,82 +109,86 @@ export default {
         }
       }
     },
-    loadSvg: function() {
-      fabric.loadSVGFromURL(this.tempSvg, (temp, options, svgTag) => {
-        let tempText = "";
-        let positionX = 0;
-        for (let i in temp) {
-          if (temp[i].type == "text") {
-            for (let j in svgTag[i].childNodes) {
-              if (svgTag[i].childNodes[j].tagName != "tspan") break;
-              tempText += svgTag[i].childNodes[j].innerHTML + "\n";
-              positionX += parseInt(svgTag[i].childNodes[j].getAttribute("x"));
+    /**
+     * @param {Object} payload svgdata
+     */
+    loadSvg: function(payload) {
+      fabric.loadSVGFromURL(
+        URL.createObjectURL(payload),
+        (temp, options, svgTag) => {
+          let tempText = "";
+          let positionX = 0;
+          for (let i in temp) {
+            if (temp[i].type == "text") {
+              for (let j in svgTag[i].childNodes) {
+                if (svgTag[i].childNodes[j].tagName != "tspan") break;
+                tempText += svgTag[i].childNodes[j].innerHTML + "\n";
+                positionX += parseInt(
+                  svgTag[i].childNodes[j].getAttribute("x")
+                );
+              }
+              if (tempText != "") {
+                let cssJson = CssToJson(
+                  svgTag[i].childNodes[0].style,
+                  temp[i],
+                  positionX
+                );
+                temp[i].set(cssJson);
+                temp[i].set({
+                  text: tempText
+                });
+                tempText = "";
+                positionX = 0;
+              }
             }
-            if (tempText != "") {
-              let cssJson = CssToJson(
-                svgTag[i].childNodes[0].style,
-                temp[i],
-                positionX
-              );
-              temp[i].set(cssJson);
-              temp[i].set({
-                text: tempText
-              });
-              tempText = "";
-              positionX = 0;
+          }
+          this.originSize.width = options.width;
+          this.originSize.height = options.height;
+          let dic = {};
+          let textData = [];
+          for (let i in svgTag) {
+            let tempGroup = findGroup(svgTag[i]);
+            if (svgTag[i].tagName == "text") {
+              tempGroup = false;
+            }
+            if (tempGroup == false) {
+              textData.push(temp[i]);
+            } else if (dic.hasOwnProperty(tempGroup)) {
+              dic[tempGroup].push(i);
+            } else {
+              dic[tempGroup] = [i];
             }
           }
-        }
-        this.originSize.width = options.width;
-        this.originSize.height = options.height;
-        let dic = {};
-        let textData = [];
-        for (let i in svgTag) {
-          let tempGroup = findGroup(svgTag[i]);
-          if (svgTag[i].tagName == "text") {
-            tempGroup = false;
+          for (let i in textData) {
+            this.canvas.add(textData[i]);
           }
-          if (tempGroup == false) {
-            textData.push(temp[i]);
-          } else if (dic.hasOwnProperty(tempGroup)) {
-            dic[tempGroup].push(i);
-          } else {
-            dic[tempGroup] = [i];
-          }
-        }
-        for (let i in textData) {
-          this.canvas.add(textData[i]);
-        }
-        let groupCount = 0;
-        for (let index in dic) {
-          let group = [];
-          let minIndex = temp.length;
-          for (let i in dic[index]) {
-            if (dic[index][i] < minIndex) {
-              minIndex = dic[index][i];
+          let groupCount = 0;
+          for (let index in dic) {
+            let group = [];
+            let minIndex = temp.length;
+            for (let i in dic[index]) {
+              if (dic[index][i] < minIndex) {
+                minIndex = dic[index][i];
+              }
+              group.push(temp[dic[index][i]]);
             }
-            group.push(temp[dic[index][i]]);
+            let newGroup = new fabric.Group(group);
+            this.canvas.add(newGroup);
+            this.canvas.moveTo(newGroup, minIndex - groupCount);
+            groupCount = group.length;
           }
-          let newGroup = new fabric.Group(group);
-          this.canvas.add(newGroup);
-          this.canvas.moveTo(newGroup, minIndex - groupCount);
-          groupCount = group.length;
+          this.canvas.renderAll();
+          const rate = 0.3;
+          let temp_str = "";
+          this.canvas.setHeight(options.height * rate);
+          this.canvas.setWidth(options.width * rate);
+          this.canvas.setZoom(rate);
+          this.canvas.renderAll();
         }
-        this.canvas.renderAll();
-        const rate = 0.3;
-        let temp_str = "";
-        this.canvas.setHeight(options.height * rate);
-        this.canvas.setWidth(options.width * rate);
-        this.canvas.setZoom(rate);
-        this.canvas.renderAll();
-      });
+      );
     }
   },
-  computed: {
-    tempSvg: function() {
-      return require("@/assets/test.svg");
-    }
-  }
+  computed: {}
 };
 
 /**
@@ -241,6 +244,5 @@ function CssToJson(cssData, fabricObj, positionX) {
   display: inline-block;
   width: 100%;
   height: 100%;
-  background-color: red;
 }
 </style>

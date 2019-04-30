@@ -7,6 +7,6 @@ export default () => {
     /**
      * @type {Boolean}
      */
-    isUploading: Boolean
+    isUploading: false
   };
 };

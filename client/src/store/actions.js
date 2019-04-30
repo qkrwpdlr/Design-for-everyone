@@ -25,6 +25,9 @@ export default {
       );
     });
   },
+  /**
+   * @param {Object} payload
+   */
   s3Upload: ({ state }, payload) => {
     const dataURItoBlob = dataURI => {
       var binary = atob(dataURI.split(",")[1]);
@@ -78,7 +81,7 @@ export default {
           if (err) {
             alert(err);
           } else {
-            alert("good")
+            alert("good");
           }
         }
       );
@@ -92,7 +95,7 @@ export default {
           if (err) {
             alert(err);
           } else {
-            alert("good")
+            alert("good");
           }
         }
       );

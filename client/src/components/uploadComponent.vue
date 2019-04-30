@@ -1,5 +1,5 @@
 <template>
-    <div class="back-dark" @dragover.prevent @drop ="dropping" @dragleave="dragleave">
+    <div class="back-dark" @dragover.prevent>
       <div class="dark-content">
         <h1>업로드</h1>
       </div>
@@ -11,18 +11,7 @@ import { mapActions, mapMutations } from "vuex";
 
 export default {
   methods: {
-    ...mapMutations({ setUploading: "setUploading" }),
-    ...mapActions({
-      s3Upload: "s3Upload"
-    }),
-    dragleave: function() {
-      this.setUploading(false);
-    },
-    dropping: function(e) {
-      this.s3Upload(e.dataTransfer.files[0]);
-      this.setUploading(false);
-      e.preventDefault();
-    }
+    ...mapMutations({ setUploading: "setUploading" })
   }
 };
 </script>
