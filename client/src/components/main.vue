@@ -1,5 +1,12 @@
 <template>
   <div id="mainDom">
+    <div>
+      <label>width<input type="number" v-model="widthData"></label>
+      <br>
+      <label>height<input type="number" v-model="heightData"></label>
+      <br>
+      <button @click="applySize">적용</button>
+    </div>
     <p @click="loadSvg">loadSvg</p>
     <p @click="loadJson">jsonLoad</p>
     <p @click="checkMod">checkMod</p>
@@ -18,6 +25,7 @@ import { fabric } from "fabric";
 import jsonData from "./../assets/test.json";
 import { mapActions, mapMutations } from "vuex";
 import { customUpload, eventBusMixin } from "@/factories/dragAndDrop";
+import convert from "@/factories/blobToUrl";
 import Vue from "vue";
 
 export default {
@@ -30,6 +38,8 @@ export default {
   data: function() {
     return {
       canvas: Object,
+      heightData: Number,
+      widthData: Number,
       facebookSize: {
         width: 820,
         height: 312
@@ -50,13 +60,24 @@ export default {
     ...mapActions({
       s3Init: "s3Init"
     }),
+    applySize: function() {
+      this.widthData;
+      this.heightData;
+    },
     saveAsJson: function() {
-      let result = this.canvas.toJSON();
-      result = JSON.stringify(result);
-      localStorage.setItem("tempSave", result);
+      let result = this.canvas.toJSON(["originWidth", "originHeight"]);
+      convert(result);
+      // result = JSON.stringify(result);
+      // localStorage.setItem("tempSave", result);
     },
     loadFromJSON: function() {
-      this.canvas.loadFromJSON(localStorage.getItem("tempSave"));
+      this.canvas.loadFromJSON(localStorage.getItem("tempSave"), () => {
+        console.log(this.canvas);
+        const rate = 0.3;
+        this.canvas.setHeight(this.canvas.originHeight * rate);
+        this.canvas.setWidth(this.canvas.originWidth * rate);
+        this.canvas.setZoom(rate);
+      });
     },
     facebookBox: function() {
       this.canvas.add(
@@ -102,12 +123,26 @@ export default {
       });
     },
     test: function() {
-      let tempObj = this.canvas._objects;
-      for (let i in tempObj) {
-        if (tempObj[i].type == "image") {
-          console.log(tempObj[i].src);
-        }
+      for (let i in this.canvas._objects) {
+        const rate = 0.1;
+        this.canvas._objects[i].set({
+          scaleX: this.canvas._objects[i].get("scaleX") * rate,
+          scaleY: this.canvas._objects[i].get("scaleY") * rate,
+          left: this.canvas._objects[i].get("left") * rate,
+          top: this.canvas._objects[i].get("top") * rate
+        });
       }
+      this.canvas.renderAll();
+    },
+    loadSvgOrigin: function() {
+      let rate = 0.3;
+      this.canvas.setZoom(rate);
+      this.canvas.setHeight(options.height * rate);
+      this.canvas.setWidth(options.width * rate);
+      for (let i in temp) {
+        this.canvas.add(temp[i]);
+      }
+      this.canvas.renderAll();
     },
     /**
      * @param {Object} payload svgdata
@@ -116,6 +151,7 @@ export default {
       fabric.loadSVGFromURL(
         URL.createObjectURL(payload),
         (temp, options, svgTag) => {
+          console.log(options);
           let tempText = "";
           let positionX = 0;
           for (let i in temp) {
@@ -142,6 +178,8 @@ export default {
               }
             }
           }
+          this.canvas.originWidth = options.width;
+          this.canvas.originHeight = options.height;
           this.originSize.width = options.width;
           this.originSize.height = options.height;
           let dic = {};

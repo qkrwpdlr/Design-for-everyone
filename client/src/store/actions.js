@@ -26,9 +26,10 @@ export default {
     });
   },
   /**
-   * @param {Object} payload
+   * @param {Object} payload.url
+   * @param {String} payload.randomName
    */
-  s3Upload: ({ state }, payload) => {
+  s3Upload: async ({ state }, payload) => {
     const dataURItoBlob = dataURI => {
       var binary = atob(dataURI.split(",")[1]);
       var array = [];
@@ -37,68 +38,22 @@ export default {
       }
       return new Blob([new Uint8Array(array)], { type: "image/png" });
     };
-
-    function makeid() {
-      let text = "";
-      let possible =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-      for (var i = 0; i < 7; i++)
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-      return text;
-    }
-    const randomName = makeid();
-
-    var file = payload;
-
-    let preview = new Image();
-    var _URL = window.URL || window.webkitURL;
-    preview.src = _URL.createObjectURL(file);
-    preview.onload = async () => {
-      var img = new fabric.Image(preview);
-      let canvas = new fabric.Canvas();
-      canvas.setHeight(preview.height);
-      canvas.setWidth(preview.width);
-      canvas.add(img);
-      canvas.renderAll();
-      let previewData = canvas.toDataURL({
-        format: `${payload.name.split(".")[1]}`,
-        multiplier: 0.1,
-        left: 0,
-        right: 0,
-        width: preview.width,
-        height: preview.height
-      });
-      var previewblobData = await dataURItoBlob(previewData);
-      state.s3.upload(
-        {
-          Key: `preview/${randomName}.${payload.name.split(".")[1]}`,
-          Body: previewblobData,
-          ContentType: payload.type
-        },
-        function(err) {
-          if (err) {
-            alert(err);
-          } else {
-            alert("good");
-          }
+    let data = await dataURItoBlob(payload.url);
+    console.log(state.s3.upload);
+    state.s3.upload(
+      {
+        ACL: "public-read",
+        Key: `origin/${payload.randomName}.jpg`,
+        Body: data,
+        ContentType: payload.url.type
+      },
+      function(err) {
+        if (err) {
+          alert(err);
+        } else {
+          alert("good");
         }
-      );
-      state.s3.upload(
-        {
-          Key: `origin/${randomName}.${payload.name.split(".")[1]}`,
-          Body: payload,
-          ContentType: payload.type
-        },
-        function(err) {
-          if (err) {
-            alert(err);
-          } else {
-            alert("good");
-          }
-        }
-      );
-    };
+      }
+    );
   }
 };

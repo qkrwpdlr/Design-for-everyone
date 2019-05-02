@@ -8,11 +8,11 @@ export let eventBusMixin = {
       this.loadSvg(payload);
     });
   },
-  methods : {
-    loadSvg : function(){
-      console.log("loadSvg가 선언되지 않았따드!")
+  methods: {
+    loadSvg: function() {
+      console.log("loadSvg가 선언되지 않았따드!");
     }
-  },
+  }
 };
 export { EventBus };
 export const customUpload = () => {
