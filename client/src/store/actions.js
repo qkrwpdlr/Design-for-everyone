@@ -1,12 +1,12 @@
 import AWS from "aws-sdk";
 import { fabric } from "fabric";
-
+import s3pool from "./../../../config";
 export default {
   s3Init: function({ commit }) {
     const bucketName = "makery-test";
     const region = "ap-northeast-2"; // 리전
-    const identityPoolId =
-      "ap-northeast-2:e6fd0b22-b13a-47a9-95d1-d2dcd78afaf2";
+    const identityPoolId = s3pool.identityPoolId;
+
     AWS.config.update({
       region: region,
       credentials: new AWS.CognitoIdentityCredentials({

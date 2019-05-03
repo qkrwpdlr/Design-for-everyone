@@ -5,7 +5,13 @@
       <br>
       <label>height<input type="number" v-model="heightData"></label>
       <br>
-      <button @click="applySize">적용</button>
+      <button @click="applySize">사이즈 변경 적용</button>
+      <br>
+      <button @click="checkSize">현재</button>
+      <br>
+      <br>
+      <br>
+      <button @click="backgroundChoise">배경선택</button>
     </div>
     <p @click="loadSvg">loadSvg</p>
     <p @click="loadJson">jsonLoad</p>
@@ -17,6 +23,8 @@
     <p @click="saveAsJson">save as json</p>
     <p @click="loadFromJSON">loadFromJSON</p>
     <canvas id="c"></canvas>
+    <br>
+    <br>
   </div>
 </template>
 
@@ -33,7 +41,10 @@ export default {
   mounted() {
     customUpload();
     this.s3Init();
-    this.canvas = new fabric.Canvas("c", { preserveObjectStacking: true });
+    this.canvas = new fabric.Canvas("c", {
+      preserveObjectStacking: true,
+      backgroundColor: "black"
+    });
   },
   data: function() {
     return {
@@ -60,15 +71,40 @@ export default {
     ...mapActions({
       s3Init: "s3Init"
     }),
+    backgroundChoise: function() {
+      this.canvas.getActiveObject().set({
+        id: "background"
+      });
+      alert("배경이 선택되었습니다.");
+    },
     applySize: function() {
-      this.widthData;
-      this.heightData;
+      let small_rate = this.heightData / this.canvas.get("height");
+      let big_rate = this.widthData / this.canvas.get("width");
+      if (small_rate > big_rate) {
+        let tmp = small_rate;
+        small_rate = big_rate;
+        big_rate = small_rate;
+      }
+      this.canvas.setWidth(this.widthData);
+      this.canvas.setHeight(this.heightData);
+      this.canvas.setZoom(this.canvas.getZoom() * small_rate);
+      this.canvas.renderAll();
+      for (let i in this.canvas._objects) {
+        if (this.canvas._objects[i].id == "background") {
+          this.canvas._objects[i].set({
+            
+          });
+        }
+      }
+      this.canvas.renderAll();
+    },
+    checkSize: function() {
+      this.widthData = this.canvas.get("width");
+      this.heightData = this.canvas.get("height");
     },
     saveAsJson: function() {
       let result = this.canvas.toJSON(["originWidth", "originHeight"]);
       convert(result);
-      // result = JSON.stringify(result);
-      // localStorage.setItem("tempSave", result);
     },
     loadFromJSON: function() {
       this.canvas.loadFromJSON(localStorage.getItem("tempSave"), () => {
@@ -123,15 +159,8 @@ export default {
       });
     },
     test: function() {
-      for (let i in this.canvas._objects) {
-        const rate = 0.1;
-        this.canvas._objects[i].set({
-          scaleX: this.canvas._objects[i].get("scaleX") * rate,
-          scaleY: this.canvas._objects[i].get("scaleY") * rate,
-          left: this.canvas._objects[i].get("left") * rate,
-          top: this.canvas._objects[i].get("top") * rate
-        });
-      }
+      console.log(this.canvas.getActiveObject().get("scaleX"));
+      console.log(this.canvas.getActiveObject().get("scaleY"));
       this.canvas.renderAll();
     },
     loadSvgOrigin: function() {
@@ -282,5 +311,6 @@ function CssToJson(cssData, fabricObj, positionX) {
   display: inline-block;
   width: 100%;
   height: 100%;
+  background-color: aqua;
 }
 </style>
