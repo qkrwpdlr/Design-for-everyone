@@ -9,7 +9,7 @@ const convert = payload => {
       for (let j in payload.objects[i].objects) {
         if (payload.objects[i].objects[j].type == "image") {
           _convert(payload.objects[i].objects[j]);
-        }
+        } 
       }
     }
     if (payload.objects[i].type == "image") {
