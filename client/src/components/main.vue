@@ -78,22 +78,52 @@ export default {
       alert("배경이 선택되었습니다.");
     },
     applySize: function() {
+      let isWidth = true;
       let small_rate = this.heightData / this.canvas.get("height");
       let big_rate = this.widthData / this.canvas.get("width");
       if (small_rate > big_rate) {
+        isWidth = false;
         let tmp = small_rate;
         small_rate = big_rate;
-        big_rate = small_rate;
+        big_rate = tmp;
       }
       this.canvas.setWidth(this.widthData);
       this.canvas.setHeight(this.heightData);
       this.canvas.setZoom(this.canvas.getZoom() * small_rate);
-      this.canvas.renderAll();
       for (let i in this.canvas._objects) {
         if (this.canvas._objects[i].id == "background") {
-          this.canvas._objects[i].set({
-            
-          });
+          this.canvas._objects[i]
+            .set({
+              scaleX: big_rate / small_rate,
+              scaleY: big_rate / small_rate
+            })
+            .setCoords();
+        } else {
+          if (isWidth == true) {
+            console.log(big_rate / small_rate);
+            let temp = this.canvas._objects[i].get("left")
+            temp += this.canvas._objects[i].get("scaleX") * this.canvas._objects[i].get("width")  / 2
+            temp *= (big_rate / small_rate)
+            temp -= this.canvas._objects[i].get("scaleX") * this.canvas._objects[i].get("width")  / 2
+            this.canvas._objects[i]
+              .set({
+                left:
+                  temp
+              })
+              .setCoords();
+          } else {
+            this.canvas._objects[i]
+            let temp = this.canvas._objects[i].get("top")
+            temp += this.canvas._objects[i].get("scaleY") * this.canvas._objects[i].get("top")  / 2
+            temp *= (big_rate / small_rate)
+            temp -= this.canvas._objects[i].get("scaleY") * this.canvas._objects[i].get("top")  / 2
+            this.canvas._objects[i]
+              .set({
+                top:
+                  temp
+              })
+              .setCoords();
+          }
         }
       }
       this.canvas.renderAll();
@@ -108,7 +138,6 @@ export default {
     },
     loadFromJSON: function() {
       this.canvas.loadFromJSON(localStorage.getItem("tempSave"), () => {
-        console.log(this.canvas);
         const rate = 0.3;
         this.canvas.setHeight(this.canvas.originHeight * rate);
         this.canvas.setWidth(this.canvas.originWidth * rate);
