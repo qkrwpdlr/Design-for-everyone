@@ -1,3 +1,7 @@
+import { fabric } from "fabric";
+
+const RATE = 0.3;
+
 export default {
   setBackground: canvas => {
     canvas.getActiveObject().set({
@@ -67,5 +71,81 @@ export default {
       }
     }
     canvas.renderAll();
+  },
+  /**
+   * @param {Object} payload svgdata
+   */
+
+  loadSvg: (canvas, payload) => {
+    fabric.loadSVGFromURL(
+      URL.createObjectURL(payload),
+      (temp, options, svgTag) => {
+        console.log(options);
+        let tempText = "";
+        let positionX = 0;
+        for (let i in temp) {
+          if (temp[i].type == "text") {
+            for (let j in svgTag[i].childNodes) {
+              if (svgTag[i].childNodes[j].tagName != "tspan") break;
+              tempText += svgTag[i].childNodes[j].innerHTML + "\n";
+              positionX += parseInt(svgTag[i].childNodes[j].getAttribute("x"));
+            }
+            if (tempText != "") {
+              let cssJson = CssToJson(
+                svgTag[i].childNodes[0].style,
+                temp[i],
+                positionX
+              );
+              temp[i].set(cssJson);
+              temp[i].set({
+                text: tempText
+              });
+              tempText = "";
+              positionX = 0;
+            }
+          }
+        }
+        canvas.originWidth = options.width;
+        canvas.originHeight = options.height;
+        let dic = {};
+        let textData = [];
+        for (let i in svgTag) {
+          let tempGroup = findGroup(svgTag[i]);
+          if (svgTag[i].tagName == "text") {
+            tempGroup = false;
+          }
+          if (tempGroup == false) {
+            textData.push(temp[i]);
+          } else if (dic.hasOwnProperty(tempGroup)) {
+            dic[tempGroup].push(i);
+          } else {
+            dic[tempGroup] = [i];
+          }
+        }
+        for (let i in textData) {
+          canvas.add(textData[i]);
+        }
+        let groupCount = 0;
+        for (let index in dic) {
+          let group = [];
+          let minIndex = temp.length;
+          for (let i in dic[index]) {
+            if (dic[index][i] < minIndex) {
+              minIndex = dic[index][i];
+            }
+            group.push(temp[dic[index][i]]);
+          }
+          let newGroup = new fabric.Group(group);
+          canvas.add(newGroup);
+          canvas.moveTo(newGroup, minIndex - groupCount);
+          groupCount = group.length;
+        }
+        canvas.renderAll();
+        canvas.setHeight(options.height * RATE);
+        canvas.setWidth(options.width * RATE);
+        canvas.setZoom(RATE);
+        canvas.renderAll();
+      }
+    );
   }
 };
