@@ -91,7 +91,7 @@ export default {
               positionX += parseInt(svgTag[i].childNodes[j].getAttribute("x"));
             }
             if (tempText != "") {
-              let cssJson = CssToJson(
+              let cssJson = _CssToJson(
                 svgTag[i].childNodes[0].style,
                 temp[i],
                 positionX
@@ -110,7 +110,7 @@ export default {
         let dic = {};
         let textData = [];
         for (let i in svgTag) {
-          let tempGroup = findGroup(svgTag[i]);
+          let tempGroup = _findGroup(svgTag[i]);
           if (svgTag[i].tagName == "text") {
             tempGroup = false;
           }
@@ -149,3 +149,50 @@ export default {
     );
   }
 };
+
+/**
+ * @param {Object} svgTag
+ * @param {null} groupList 재귀함수를 위한 값으로 null, 즉 값이 없는것이 좋다
+ */
+var index = 0;
+const GROUPINDEX = 2;
+function _findGroup(svgTag, groupList) {
+  if (groupList == undefined) {
+    groupList = [];
+  }
+  if (svgTag.tagName == "svg") {
+    if (groupList == undefined || groupList == []) return false;
+    if (groupList[groupList.length - GROUPINDEX] == undefined) return false;
+    return groupList[groupList.length - GROUPINDEX];
+  } else if (svgTag.tagName == "g") {
+    if (svgTag.id == "") {
+      svgTag.id = "gg" + index;
+      index = index + 1;
+    }
+    groupList.push(svgTag.id);
+    return _findGroup(svgTag.parentElement, groupList);
+  } else {
+    return _findGroup(svgTag.parentElement, groupList);
+  }
+}
+/**
+ * @param {Object:CSSStyleDeclaration} cssData
+ * @param {Obejct} fabricObj fabricjs object for position
+ * @param {Number} positionX gap of x position
+ */
+function _CssToJson(cssData, fabricObj, positionX) {
+  let textAlign = positionX != 0 ? "center" : "left";
+  if (positionX > 0) positionX = 0;
+  return {
+    fontSize: parseInt(cssData.fontSize, 10),
+    fontFamily: cssData.fontFamily,
+    letterSpace: parseInt(cssData.letterSpacing, 10),
+    fill: cssData.fill || "#000000",
+    top:
+      fabricObj.top -
+      parseInt(cssData.fontSize, 10) +
+      fabricObj.get("fontSize"),
+    left: fabricObj.left + positionX,
+    textAlign
+  };
+}
