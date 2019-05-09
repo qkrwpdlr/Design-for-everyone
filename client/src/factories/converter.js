@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
 
-const RATE = 0.3;
+const RATE = 0.2;
 
 export default {
   setBackground: canvas => {
