@@ -2,6 +2,7 @@
     <div class="back-dark" @dragover.prevent>
       <div class="dark-content">
         <h1>업로드</h1>
+        
       </div>
     </div>
 </template>
