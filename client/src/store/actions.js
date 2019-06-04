@@ -51,7 +51,7 @@ export default {
         if (err) {
           alert(err);
         } else {
-          alert("good");
+          
         }
       }
     );
